@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  FISHERMAN
+  INSPECTOR
+  CUSTOMER
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id               Int            @id @default(autoincrement())
+  full_name        String
+  email            String         @unique
+  password         String
+  role             Role           @default(CUSTOMER)
+  is_active        Boolean        @default(true)
+  created_at       DateTime       @default(now())
+  
+  caught_batches   SeafoodBatch[] @relation("FishermanBatches")
+  approved_batches SeafoodBatch[] @relation("InspectorBatches")
+}
+
+model SeafoodBatch {
+  id                      Int       @id @default(autoincrement())
+  fisherman_id            Int
+  product_name            String
+  quantity                Float
+  catch_location          String
+  catch_time              DateTime
+  arrival_supermarket_time DateTime?
+  image_url               String?
+  status                  Status    @default(PENDING)
+  approved_by             Int?
+  approved_at             DateTime?
+  approval_document_url   String?
+  blockchain_hash         String?
+  qr_code                 String?   @unique
+  is_locked               Boolean   @default(false)
+  created_at              DateTime  @default(now())
+
+  fisherman               User      @relation("FishermanBatches", fields: [fisherman_id], references: [id])
+  inspector               User?     @relation("InspectorBatches", fields: [approved_by], references: [id])
+}
